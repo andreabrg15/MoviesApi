@@ -28,7 +28,44 @@ namespace MoviesApi
             {
                 db.Movies.Add(movie);
                 await db.SaveChangesAsync();
-                return Results.CreatedAtRoute("/movies", new { id = movie.Id }, movie);
+                return Results.Created($"/movies/{movie.Id}", movie);
+            });
+
+            // PUT /movies/{id}
+            group.MapPut("/{id}", async (int id, Movie updatedMovie, MovieDb db) =>
+            {
+                var existingMovie = await db.Movies.FindAsync(id);
+
+                if (existingMovie is null)
+                {
+                    return Results.NotFound();
+                }
+
+                existingMovie.Title = updatedMovie.Title;
+                existingMovie.Description = updatedMovie.Description;
+                existingMovie.Genre = updatedMovie.Genre;
+                existingMovie.ReleaseDate = updatedMovie.ReleaseDate;
+
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            });
+
+            // DELETE /movies/{id}
+            group.MapDelete("/{id}", async (int id, MovieDb db) =>
+            {
+                var movie = await db.Movies.FindAsync(id);
+
+                if (movie is null)
+                {
+                    return Results.NotFound();
+                }
+
+                await db.Movies
+                .Where(m => m.Id == id)
+                .ExecuteDeleteAsync();
+
+                return Results.NoContent();
             });
         }
     }
