@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MoviesApi.Data;
+using MoviesApi.Models;
 
-namespace MoviesApi
+namespace MoviesApi.Endpoints
 {
     public static class MoviesEndpoints
     {
@@ -61,9 +62,8 @@ namespace MoviesApi
                     return Results.NotFound();
                 }
 
-                await db.Movies
-                .Where(m => m.Id == id)
-                .ExecuteDeleteAsync();
+                db.Movies.Remove(movie);
+                await db.SaveChangesAsync();
 
                 return Results.NoContent();
             });
