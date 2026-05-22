@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MoviesApi.Data;
+using MoviesApi.Dtos;
 using MoviesApi.Models;
 
 namespace MoviesApi.Endpoints
@@ -13,7 +14,17 @@ namespace MoviesApi.Endpoints
             // GET /movies
             group.MapGet("/", async (MovieDb db) =>
             {
-                var movies = await db.Movies.ToListAsync();
+                var movies = await db.Movies
+                .Include(m => m.Genre)
+                .Select(m => new MovieSummaryDto(
+                    m.Id,
+                    m.Title,
+                    m.Description,
+                    m.Genre.Name,
+                    m.ReleaseDate
+                ))
+                .AsNoTracking()
+                .ToListAsync();
                 return Results.Ok(movies);
             });
 
@@ -21,19 +32,44 @@ namespace MoviesApi.Endpoints
             group.MapGet("/{id}", async (int id, MovieDb db) =>
             {
                 var movie = await db.Movies.FindAsync(id);
-                return movie is not null ? Results.Ok(movie) : Results.NotFound();
-            });
+                return movie is null ? Results.NotFound() : Results.Ok(
+                    new MovieDetailsDto(
+                        movie.Id,
+                        movie.Title,
+                        movie.Description,
+                        movie.GenreId,
+                        movie.ReleaseDate
+                    )
+                );
+            }).WithName("GetMovie");
 
             // POST /movies
-            group.MapPost("/", async (Movie movie, MovieDb db) =>
+            group.MapPost("/", async (CreateMovieDto newMovie, MovieDb db) =>
             {
+                Movie movie = new()
+                {
+                    Title = newMovie.Title,
+                    Description = newMovie.Description,
+                    GenreId = newMovie.GenreId,
+                    ReleaseDate = newMovie.ReleaseDate
+                };
+
                 db.Movies.Add(movie);
                 await db.SaveChangesAsync();
-                return Results.Created($"/movies/{movie.Id}", movie);
+
+                MovieDetailsDto movieDto = new(
+                    movie.Id,
+                    movie.Title,
+                    movie.Description,
+                    movie.GenreId,
+                    movie.ReleaseDate
+                );
+
+                return Results.CreatedAtRoute("GetMovie", new { id = movieDto.Id }, movieDto);
             });
 
             // PUT /movies/{id}
-            group.MapPut("/{id}", async (int id, Movie updatedMovie, MovieDb db) =>
+            group.MapPut("/{id}", async (int id, UpdateMovieDto updatedMovie, MovieDb db) =>
             {
                 var existingMovie = await db.Movies.FindAsync(id);
 
@@ -44,7 +80,7 @@ namespace MoviesApi.Endpoints
 
                 existingMovie.Title = updatedMovie.Title;
                 existingMovie.Description = updatedMovie.Description;
-                existingMovie.Genre = updatedMovie.Genre;
+                existingMovie.GenreId = updatedMovie.GenreId;
                 existingMovie.ReleaseDate = updatedMovie.ReleaseDate;
 
                 await db.SaveChangesAsync();
