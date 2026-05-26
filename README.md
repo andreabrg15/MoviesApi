@@ -1,5 +1,5 @@
 # Endpoints
-## /genres
+## http://moviesapi.somee.com/genres
 Al llamar a este endpoint con el método GET, devuelve la lista de géneros de películas guardados.
 ```
 [
@@ -18,7 +18,7 @@ Al llamar a este endpoint con el método GET, devuelve la lista de géneros de p
   ...
 ]
 ```
-## /movies
+## http://moviesapi.somee.com/movies
 ### GET
 Un llamado a este endpoint con este método, devuelve la lista de películas guardadas.
 ```
@@ -52,7 +52,7 @@ Request Body:
 }
 ```
 
-## /movies/{id}
+## http://moviesapi.somee.com/movies/{id}
 ### GET
 Un llamado a este endpoint con este método, devuelve los detalles de la película guardada con ese id.
 ```
